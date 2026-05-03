@@ -23,6 +23,9 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
+# Seed data
+server/seed.js
+
 # Editor
 .vscode/
 .idea/
