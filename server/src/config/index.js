@@ -35,6 +35,17 @@ const config = {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW, 10) || 900000,
     max: parseInt(process.env.RATE_LIMIT_MAX, 10) || 100,
   },
+
+  groq: {
+    apiKey: process.env.GROQ_API_KEY || '',
+    model:  'openai/gpt-4o-mini', // Using openai-compatible endpoint via Groq
+  },
+
+  cloudinary: {
+    cloudName:  process.env.CLOUDINARY_CLOUD_NAME || '',
+    apiKey:     process.env.CLOUDINARY_API_KEY    || '',
+    apiSecret:  process.env.CLOUDINARY_API_SECRET || '',
+  },
 };
 
 export default config;

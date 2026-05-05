@@ -37,6 +37,14 @@ export const initSocket = (httpServer) => {
       socket.leave(`movie:${movieId}`);
     });
 
+    // Join space post room (for real-time comments)
+    socket.on('join:space', (postId) => {
+      socket.join(`space:${postId}`);
+    });
+    socket.on('leave:space', (postId) => {
+      socket.leave(`space:${postId}`);
+    });
+
     // Join personal notification channel
     if (socket.user) {
       socket.join(`user:${socket.user._id}`);

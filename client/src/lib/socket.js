@@ -7,7 +7,7 @@ import { io } from 'socket.io-client';
 
 let socket = null;
 
-const getSocket = (token) => {
+export const getSocket = (token) => {
   if (!socket || socket.disconnected) {
     socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000', {
       auth: { token },

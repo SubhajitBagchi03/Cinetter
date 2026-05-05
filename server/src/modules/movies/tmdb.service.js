@@ -176,6 +176,15 @@ const tmdbService = {
 
   getImageUrl: (path, size = 'w500') =>
     path ? `${config.tmdb.imageBaseUrl}/${size}${path}` : null,
+
+  // Fetch movie/show with credits appended (for AI context — short TTL)
+  fetchWithCredits: (id, type = 'movie') =>
+    cache(`credits_context:${type}:${id}`, 3600, async () => {
+      const { data } = await tmdb.get(`/${type}/${id}`, {
+        params: { append_to_response: 'credits' },
+      });
+      return data;
+    }),
 };
 
 export default tmdbService;

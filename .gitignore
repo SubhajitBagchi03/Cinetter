@@ -25,6 +25,7 @@ Thumbs.db
 
 # Seed data
 server/seed.js
+server/seedSpaces.js
 
 # Editor
 .vscode/

@@ -24,6 +24,7 @@ const AdminDash   = lazy(() => import('./pages/admin/Dashboard'));
 const NotFound    = lazy(() => import('./pages/NotFound'));
 const AITools     = lazy(() => import('./pages/AITools'));
 const SeasonDetail = lazy(() => import('./pages/SeasonDetail'));
+const SpacePostDetail = lazy(() => import('./pages/SpacePostDetail'));
 
 const Fallback = () => (
   <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
@@ -69,7 +70,8 @@ function AppRoutes() {
           <Route path="/tv/:id/season/:seasonNumber" element={<SeasonDetail />} />
           <Route path="/person/:id"    element={<PersonDetail />} />
           <Route path="/schedule"      element={<Protected><Schedule /></Protected>} />
-          <Route path="/spaces"        element={<Protected><Spaces /></Protected>} />
+          <Route path="/spaces"           element={<Protected><Spaces /></Protected>} />
+          <Route path="/spaces/:postId"    element={<Protected><SpacePostDetail /></Protected>} />
           <Route path="/collections"   element={<Protected><Collections /></Protected>} />
           <Route path="/profile/:id"   element={<Protected><Profile /></Protected>} />
           <Route path="/ai"             element={<Protected><AITools /></Protected>} />

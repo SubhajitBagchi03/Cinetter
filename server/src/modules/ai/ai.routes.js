@@ -103,4 +103,66 @@ router.post('/deja-view', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ── Director's Chair for Spaces (Groq LLM + TMDB context) ────────────────
+router.post('/spaces-directors-chair', async (req, res, next) => {
+  try {
+    const { tmdbId, mediaType = 'movie', userTake } = req.body;
+    if (!tmdbId || !userTake?.trim()) {
+      return res.status(400).json({ success: false, message: 'tmdbId and userTake are required' });
+    }
+
+    // 1. Fetch rich TMDB context (with credits)
+    let mediaData = {};
+    try {
+      const endpoint = mediaType === 'tv'
+        ? `/tv/${tmdbId}`
+        : `/movie/${tmdbId}`;
+      // Direct call to get credits appended — not cached endpoint
+      const tmdbRes = await tmdbService.fetchWithCredits(tmdbId, mediaType);
+      mediaData = tmdbRes || {};
+    } catch { /* Use whatever we have */ }
+
+    const title     = mediaData.title || mediaData.name || 'this film';
+    const overview  = mediaData.overview || '';
+    const year      = (mediaData.release_date || mediaData.first_air_date || '').slice(0, 4);
+    const genres    = (mediaData.genres || []).map(g => g.name).join(', ');
+    const director  = (mediaData.credits?.crew || []).find(c => c.job === 'Director')?.name || '';
+    const cast      = (mediaData.credits?.cast || []).slice(0, 5).map(c => c.name).join(', ');
+
+    // 2. Build the system + user prompt
+    const systemPrompt = `You are a brilliant film critic and creative screenwriter contributing to Cinetter, a premium cinema platform.
+Your task is to write an insightful, creative, and engaging piece based on a user's personal take on a film or TV show.
+Keep the tone cinematic, passionate, and intelligent. Write 3-5 paragraphs. Do not use bullet points or headers — flowing prose only.`;
+
+    const userPrompt = `Film: ${title} (${year})
+Genre: ${genres}${director ? `\nDirector: ${director}` : ''}${cast ? `\nKey Cast: ${cast}` : ''}
+Plot Overview: ${overview}
+
+User's Take: "${userTake}"
+
+Write a cinematic piece inspired by this take. It could be an alternate ending, a reinterpretation, a thematic deep-dive, or a character analysis — whatever best serves the user's perspective. Make it feel like premium film writing.`;
+
+    // 3. Call Groq LLM
+    if (!process.env.GROQ_API_KEY) {
+      return res.status(503).json({ success: false, message: 'GROQ_API_KEY not configured on server' });
+    }
+
+    const { default: Groq } = await import('groq-sdk');
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+    const completion = await groq.chat.completions.create({
+      model:       'llama-3.3-70b-versatile',   // Valid Groq model
+      messages:    [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
+      temperature: 0.82,
+      max_tokens:  900,
+    });
+
+    const aiContent = completion.choices[0]?.message?.content?.trim() || '';
+    res.json({ success: true, data: { aiContent, title } });
+  } catch (err) {
+    console.error('[Director\'s Chair] Groq error:', err?.message || err);
+    next(err);
+  }
+});
+
 export default router;
