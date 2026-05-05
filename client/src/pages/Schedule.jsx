@@ -7,7 +7,11 @@ import api from '../lib/api';
 const IMG = (p) => p ? `https://image.tmdb.org/t/p/w342${p}` : null;
 const DAYS   = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-const NOW    = () => new Date().toISOString().slice(0,10);
+// Timezone-safe: always uses local date, not UTC
+const NOW = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
 
 const fmtDate = (d) => {
   const dt = new Date(d + 'T12:00:00');
@@ -150,35 +154,27 @@ export default function DropRadar() {
   useEffect(() => {
     setLoading(true);
     const today = NOW();
-    // "Recent" = last 14 days
-    const fourteenDaysAgo = new Date(); fourteenDaysAgo.setDate(fourteenDaysAgo.getDate()-14);
-    const recentCutoff = fourteenDaysAgo.toISOString().slice(0,10);
     // "Soon" = within 12 months
     const twelveMonthsOut = new Date(); twelveMonthsOut.setMonth(twelveMonthsOut.getMonth()+12);
     const soonCutoff = twelveMonthsOut.toISOString().slice(0,10);
-    // "New TV" cutoff no longer needed — upcoming-tv already guarantees future dates
 
     Promise.all([
-      api.get('/movies/now-playing'),          // movies recently in theaters
-      api.get('/movies/airing-today'),         // TV airing today specifically
+      api.get('/movies/releasing-today'),      // movies with exact today's release_date
+      api.get('/movies/airing-today'),         // TV episodes airing today
       api.get('/movies/upcoming'),             // upcoming movies p1
       api.get('/movies/upcoming?page=2'),      // upcoming movies p2
-      api.get('/movies/upcoming-tv'),          // TV with future premiere dates (discover)
-    ]).then(([np, at, up1, up2, utv]) => {
-      // ── RELEASING TODAY movies ──
-      // now-playing = movies currently in theaters (past ~3 weeks)
-      // Filter to last 14 days so we don't show very old stuff under "today"
-      const todayMovies = (np.data.data?.results || np.data.data || [])
-        .map(m => ({ ...m, media_type:'movie' }))
-        .filter(m => m.release_date >= recentCutoff); // last 14 days
+      api.get('/movies/upcoming-tv'),          // TV with future premiere dates
+    ]).then(([rt, at, up1, up2, utv]) => {
+      // ── RELEASING TODAY movies — strictly today's date only ──
+      const todayMovies = (rt.data.data?.results || rt.data.data || [])
+        .map(m => ({ ...m, media_type:'movie' }));
 
       // ── RELEASING TODAY TV ──
-      // airing-today = shows with episodes airing exactly today — no filtering needed
+      // airing-today = shows with episodes airing exactly today
       const todayTV = (at.data.data?.results || at.data.data || [])
         .map(m => ({ ...m, media_type:'tv' }));
 
       // ── DROPPING SOON movies ──
-      // upcoming = confirmed future releases — deduplicate p1+p2, keep only future dates within 12 months
       const upcomingRaw = dedup([
         ...(up1.data.data?.results || up1.data.data || []),
         ...(up2.data.data?.results || up2.data.data || []),
@@ -189,8 +185,6 @@ export default function DropRadar() {
       );
 
       // ── DROPPING SOON TV ──
-      // upcoming-tv = /discover/tv?first_air_date.gte=today — genuinely future TV premieres only
-      // No extra filtering needed — TMDB already guarantees first_air_date >= today
       const soonTV = (utv.data.data?.results || utv.data.data || [])
         .map(m => ({ ...m, media_type:'tv' }));
 

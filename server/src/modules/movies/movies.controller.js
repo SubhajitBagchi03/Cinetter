@@ -93,6 +93,13 @@ export const getUpcomingTV = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+export const getReleasingToday = async (req, res, next) => {
+  try {
+    const data = await tmdbService.getReleasingToday();
+    res.json({ success: true, data });
+  } catch (err) { next(err); }
+};
+
 export const getPersonCredits = async (req, res, next) => {
   try {
     const data = await tmdbService.getPersonCredits(req.params.id);

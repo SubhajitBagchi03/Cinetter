@@ -16,6 +16,12 @@ const tmdb = axios.create({
   },
 });
 
+// Timezone-safe local date string  YYYY-MM-DD
+const localDate = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
+
 const cache = async (key, ttl, fetcher) => {
   const redis = getRedis();
   if (redis) {
@@ -112,12 +118,26 @@ const tmdbService = {
   // Genuinely upcoming TV: shows with future premiere dates not yet aired
   getUpcomingTV: (page = 1) =>
     cache(`tv:upcoming:${page}`, 3600, async () => {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = localDate();   // local date, not UTC
       const { data } = await tmdb.get('/discover/tv', {
         params: {
           'first_air_date.gte': today,
           sort_by: 'popularity.desc',
           page,
+        },
+      });
+      return data;
+    }),
+
+  // Movies releasing on exactly today's date (discover, not now_playing)
+  getReleasingToday: () =>
+    cache(`releasing_today:${localDate()}`, 1800, async () => {
+      const today = localDate();
+      const { data } = await tmdb.get('/discover/movie', {
+        params: {
+          'primary_release_date.gte': today,
+          'primary_release_date.lte': today,
+          sort_by: 'popularity.desc',
         },
       });
       return data;

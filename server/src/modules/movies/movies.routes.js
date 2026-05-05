@@ -3,7 +3,8 @@ import {
   getTrending, search, getMovieDetail, getCredits, getSimilar,
   getPerson, getPersonCredits, getUpcoming, getNowPlaying,
   getTopRated, getPopular, getGenres, discoverByGenre,
-  discoverByProvider, getWatchProviders, getAiringToday, getOnTheAir, getUpcomingTV,
+  discoverByProvider, getWatchProviders, getAiringToday, getOnTheAir,
+  getUpcomingTV, getReleasingToday,
 } from './movies.controller.js';
 
 const router = Router();
@@ -12,9 +13,10 @@ const router = Router();
 router.get('/trending',    getTrending);
 router.get('/upcoming',    getUpcoming);
 router.get('/now-playing', getNowPlaying);
-router.get('/airing-today',  getAiringToday);
-router.get('/on-air',        getOnTheAir);
-router.get('/upcoming-tv',   getUpcomingTV);
+router.get('/airing-today',      getAiringToday);
+router.get('/on-air',            getOnTheAir);
+router.get('/upcoming-tv',       getUpcomingTV);
+router.get('/releasing-today',   getReleasingToday);  // movies with today's exact release date
 router.get('/top-rated',   getTopRated);
 router.get('/popular',     getPopular);
 router.get('/genres',      getGenres);
